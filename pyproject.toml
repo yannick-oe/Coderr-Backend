@@ -1,0 +1,19 @@
+[tool.ruff]
+line-length = 79
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"*/migrations/*" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "core",
+    "auth_app",
+    "offers_app",
+    "orders_app",
+    "reviews_app",
+    "base_info_app",
+]
