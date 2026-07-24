@@ -1,0 +1,10 @@
+asgiref==3.12.1
+coverage==7.15.2
+Django==6.0.7
+django-cors-headers==4.9.0
+django-filter==26.1
+djangorestframework==3.17.1
+pillow==12.3.0
+python-dotenv==1.2.2
+ruff==0.16.0
+sqlparse==0.5.5
