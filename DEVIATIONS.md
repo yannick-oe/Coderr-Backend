@@ -20,4 +20,19 @@ Add new entries at the top, newest first, using this template:
 
 ---
 
-_No deviations recorded yet._
+### 2026-07-25 — Email uniqueness enforced at registration
+
+- **Context:** auth_app registration endpoint (`POST /api/registration/`),
+  `RegistrationSerializer.validate_email`.
+- **Deviation:** The endpoint documentation lists no uniqueness rule for
+  `email`, and Django's `User` model does not enforce one. Registration
+  nevertheless rejects a duplicate email with HTTP 400 (invalid data).
+- **Reason:** A duplicate email is ambiguous for support and account
+  recovery, and the frontend treats every registration failure as 400.
+  The documentation is silent here, not explicitly permissive, so a
+  documented stricter rule was judged safer than silently accepting
+  duplicates. Enforcement is at the serializer only; no database unique
+  constraint was added to `auth.User`.
+- **Rollback:** Remove `validate_email` from `RegistrationSerializer`.
+  No migration or schema change is required, because no database
+  constraint was introduced.
