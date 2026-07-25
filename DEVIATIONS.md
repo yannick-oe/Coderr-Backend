@@ -20,6 +20,29 @@ Add new entries at the top, newest first, using this template:
 
 ---
 
+### 2026-07-25 — Offer detail URLs are absolute and include /api/
+
+- **Context:** offers_app offer-detail endpoint
+  (`GET /api/offers/{id}/`), `OfferDetailLinkSerializer.get_url`.
+- **Deviation:** The documentation is internally inconsistent about the
+  `details[].url` field. The offer-**list** example (`GET /api/offers/`)
+  shows a relative `"/offerdetails/1/"` **without** the `/api` prefix,
+  which does not resolve against this backend (all routes live under
+  `/api/`). The offer-**detail** example (`GET /api/offers/{id}/`) shows
+  a full absolute `"http://127.0.0.1:8000/api/offerdetails/199/"`. We
+  follow the detail example: `url` is an absolute URL built from the
+  request via `reverse("offerdetail-detail")`, so it always includes the
+  `/api/` prefix and the correct host.
+- **Reason:** A relative `/offerdetails/1/` would 404, and the frontend
+  prefixes only non-http values with the site root, producing
+  `http://127.0.0.1:8000/offerdetails/1/` (still missing `/api/`). The
+  absolute, `/api`-prefixed form is the only one that resolves, and it
+  matches the endpoint's own detail example.
+- **Rollback:** To emit the relative form instead, return
+  `reverse("offerdetail-detail", args=[obj.id])` without
+  `request.build_absolute_uri`; note this breaks navigation unless the
+  frontend is changed to add the `/api` prefix.
+
 ### 2026-07-25 — Customer profile list omits business-only fields
 
 - **Context:** auth_app customer list endpoint
