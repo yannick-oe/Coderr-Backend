@@ -58,11 +58,11 @@ class OfferDetail(models.Model):
     )
 
     class Meta:
-        """Naming, price ordering and one tier type per offer."""
+        """Naming, id ordering and one tier type per offer."""
 
         verbose_name = "Offer detail"
         verbose_name_plural = "Offer details"
-        ordering = ["price"]
+        ordering = ["id"]
         constraints = [
             models.UniqueConstraint(
                 fields=["offer", "offer_type"],
