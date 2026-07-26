@@ -67,17 +67,34 @@ def offer_payload(**overrides):
     return data
 
 
+def add_tier(offer, offer_type, price, days):
+    """Add one priced detail tier to an offer and return it."""
+    return OfferDetail.objects.create(
+        offer=offer,
+        title="Tier",
+        revisions=1,
+        delivery_time_in_days=days,
+        price=price,
+        features=["f"],
+        offer_type=offer_type,
+    )
+
+
 def create_offer(user):
     """Create an offer with three priced detail tiers."""
     offer = Offer.objects.create(user=user, title="T", description="D")
     for offer_type, price, days in DETAIL_SPECS:
-        OfferDetail.objects.create(
-            offer=offer,
-            title="Tier",
-            revisions=1,
-            delivery_time_in_days=days,
-            price=price,
-            features=["f"],
-            offer_type=offer_type,
-        )
+        add_tier(offer, offer_type, price, days)
+    return offer
+
+
+def offer_with(user, *, min_price, min_days, title="T", description="D"):
+    """Create an offer whose detail minimums match the arguments."""
+    offer = Offer.objects.create(
+        user=user, title=title, description=description
+    )
+    prices = [min_price, min_price + 100, min_price + 200]
+    days = [min_days + 2, min_days, min_days + 5]
+    for offer_type, price, day in zip(OfferType.values, prices, days):
+        add_tier(offer, offer_type, price, day)
     return offer
