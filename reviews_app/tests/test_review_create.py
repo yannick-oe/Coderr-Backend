@@ -115,3 +115,16 @@ class ReviewCreateTests(APITestCase):
         body = self.body(business_user=self.customer2.id)
         response = self.create(body, self.customer)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_missing_business_user_returns_400(self):
+        """A missing business_user is a serializer 400, not a 500."""
+        body = self.body()
+        del body["business_user"]
+        response = self.create(body, self.customer)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_non_numeric_business_user_returns_400(self):
+        """A non-numeric business_user is a serializer 400, not a 500."""
+        body = self.body(business_user="abc")
+        response = self.create(body, self.customer)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
