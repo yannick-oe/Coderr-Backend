@@ -64,7 +64,7 @@ See `.env.example` for the required keys. Secrets are never committed.
 
 | Variable        | Description                              | Example               |
 | --------------- | ---------------------------------------- | --------------------- |
-| `SECRET_KEY`    | Django secret key (required, no default) | *(generated value)*   |
+| `SECRET_KEY`    | Django secret key (required, no default) | _(generated value)_   |
 | `DEBUG`         | Debug mode, `True` or `False`            | `True`                |
 | `ALLOWED_HOSTS` | Comma-separated list of allowed hosts    | `127.0.0.1,localhost` |
 
@@ -92,31 +92,31 @@ Tokens are issued on login and registration, which both return
 
 Base URL: `http://127.0.0.1:8000/api/`
 
-| Method | Path | Who may call it |
-| --- | --- | --- |
-| POST | `/api/registration/` | Anyone |
-| POST | `/api/login/` | Anyone |
-| GET | `/api/profile/{pk}/` | Any authenticated user |
-| PATCH | `/api/profile/{pk}/` | The profile's owner |
-| GET | `/api/profiles/business/` | Any authenticated user |
-| GET | `/api/profiles/customer/` | Any authenticated user |
-| GET | `/api/offers/` | Anyone (public, paginated) |
-| POST | `/api/offers/` | Authenticated business users |
-| GET | `/api/offers/{id}/` | Any authenticated user |
-| PATCH | `/api/offers/{id}/` | The offer's owner |
-| DELETE | `/api/offers/{id}/` | The offer's owner |
-| GET | `/api/offerdetails/{id}/` | Any authenticated user |
-| GET | `/api/orders/` | Any authenticated user (own orders) |
-| POST | `/api/orders/` | Authenticated customer users |
-| PATCH | `/api/orders/{id}/` | The order's assigned business user |
-| DELETE | `/api/orders/{id}/` | Staff (admin) users |
-| GET | `/api/order-count/{business_user_id}/` | Any authenticated user |
-| GET | `/api/completed-order-count/{business_user_id}/` | Any authenticated user |
-| GET | `/api/reviews/` | Any authenticated user |
-| POST | `/api/reviews/` | Authenticated customer users |
-| PATCH | `/api/reviews/{id}/` | The review's author |
-| DELETE | `/api/reviews/{id}/` | The review's author |
-| GET | `/api/base-info/` | Anyone (public) |
+| Method | Path                                             | Who may call it                     |
+| ------ | ------------------------------------------------ | ----------------------------------- |
+| POST   | `/api/registration/`                             | Anyone                              |
+| POST   | `/api/login/`                                    | Anyone                              |
+| GET    | `/api/profile/{pk}/`                             | Any authenticated user              |
+| PATCH  | `/api/profile/{pk}/`                             | The profile's owner                 |
+| GET    | `/api/profiles/business/`                        | Any authenticated user              |
+| GET    | `/api/profiles/customer/`                        | Any authenticated user              |
+| GET    | `/api/offers/`                                   | Anyone (public, paginated)          |
+| POST   | `/api/offers/`                                   | Authenticated business users        |
+| GET    | `/api/offers/{id}/`                              | Any authenticated user              |
+| PATCH  | `/api/offers/{id}/`                              | The offer's owner                   |
+| DELETE | `/api/offers/{id}/`                              | The offer's owner                   |
+| GET    | `/api/offerdetails/{id}/`                        | Any authenticated user              |
+| GET    | `/api/orders/`                                   | Any authenticated user (own orders) |
+| POST   | `/api/orders/`                                   | Authenticated customer users        |
+| PATCH  | `/api/orders/{id}/`                              | The order's assigned business user  |
+| DELETE | `/api/orders/{id}/`                              | Staff (admin) users                 |
+| GET    | `/api/order-count/{business_user_id}/`           | Any authenticated user              |
+| GET    | `/api/completed-order-count/{business_user_id}/` | Any authenticated user              |
+| GET    | `/api/reviews/`                                  | Any authenticated user              |
+| POST   | `/api/reviews/`                                  | Authenticated customer users        |
+| PATCH  | `/api/reviews/{id}/`                             | The review's author                 |
+| DELETE | `/api/reviews/{id}/`                             | The review's author                 |
+| GET    | `/api/base-info/`                                | Anyone (public)                     |
 
 ---
 
@@ -157,6 +157,7 @@ Base URL: `http://127.0.0.1:8000/api/`
   page of six offers produces eighteen additional requests to
   `/api/offerdetails/{id}/`. This is client behaviour and is not fixed in
   the backend; each `offerdetails/{id}/` call is kept to a single query.
+- The delivered frontend redirects away from login.html and registration.html whenever any token is present in localStorage, without checking its validity    (login.js:7, registration.js:7). A client holding a foreign or expired token therefore cannot reach the login form until localStorage is cleared. The backend keeps all public endpoints reachable in that state; the client-side guard itself is frontend behaviour and is not modified.
 
 ---
 
@@ -164,10 +165,10 @@ Base URL: `http://127.0.0.1:8000/api/`
 
 The delivered frontend hardcodes two guest logins in its `config.js`:
 
-| Type | Username | Password |
-| --- | --- | --- |
-| customer | `andrey` | `asdasd` |
-| business | `kevin` | `asdasd24` |
+| Type     | Username | Password   |
+| -------- | -------- | ---------- |
+| customer | `andrey` | `asdasd`   |
+| business | `kevin`  | `asdasd24` |
 
 These accounts **do not exist** in a fresh database — the frontend only
 sends their credentials to `POST /api/login/`; it never creates them.
