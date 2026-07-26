@@ -17,3 +17,19 @@ known-first-party = [
     "reviews_app",
     "base_info_app",
 ]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/tests.py",
+    "manage.py",
+    "*/wsgi.py",
+    "*/asgi.py",
+    "*/settings.py",
+    ".venv/*",
+]
+
+[tool.coverage.report]
+show_missing = true
