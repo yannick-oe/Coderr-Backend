@@ -145,6 +145,18 @@ Base URL: `http://127.0.0.1:8000/api/`
   media paths with `http://127.0.0.1:8000/`.
 - **CORS** is restricted to the frontend dev origins
   `http://127.0.0.1:5500` and `http://localhost:5500`.
+- **Four views declare permissions through `get_permissions()`** rather
+  than a `permission_classes` attribute — `OfferListCreateView`,
+  `OrderListCreateView`, `OrderStatusUpdateDeleteView` and
+  `ReviewListCreateView`. On those paths the HTTP methods (e.g. GET vs
+  POST) require different permissions, which a single `permission_classes`
+  list cannot express. Every method returns an explicit permission list;
+  no view inherits the global default silently.
+- **The offer list drives one extra request per offer detail, by
+  design.** The delivered frontend fetches each detail separately, so a
+  page of six offers produces eighteen additional requests to
+  `/api/offerdetails/{id}/`. This is client behaviour and is not fixed in
+  the backend; each `offerdetails/{id}/` call is kept to a single query.
 
 ---
 
