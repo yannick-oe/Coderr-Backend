@@ -6,8 +6,9 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveAPIView,
-    RetrieveDestroyAPIView,
+    RetrieveUpdateDestroyAPIView,
 )
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import (
     SAFE_METHODS,
     AllowAny,
@@ -22,6 +23,7 @@ from offers_app.api.serializers import (
     OfferDetailSerializer,
     OfferListSerializer,
     OfferRetrieveSerializer,
+    OfferUpdateSerializer,
 )
 from offers_app.models import Offer, OfferDetail
 
@@ -65,17 +67,24 @@ class OfferListCreateView(ListCreateAPIView):
         return [AllowAny()]
 
 
-class OfferRetrieveDestroyView(RetrieveDestroyAPIView):
-    """Retrieve an offer with minimums or delete it as its owner."""
+class OfferRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    """Retrieve, partially update, or delete an offer as its owner."""
 
-    serializer_class = OfferRetrieveSerializer
     permission_classes = [IsAuthenticated, IsOfferOwnerOrReadOnly]
+    parser_classes = [MultiPartParser, JSONParser]
+    http_method_names = ["get", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
-        """Annotate and prefetch for reads; stay lean for deletes."""
+        """Annotate and prefetch for reads; stay lean for writes."""
         if self.request.method not in SAFE_METHODS:
             return Offer.objects.select_related("user")
         return annotated_offers()
+
+    def get_serializer_class(self):
+        """Read serializer for GET, update serializer for PATCH."""
+        if self.request.method == "PATCH":
+            return OfferUpdateSerializer
+        return OfferRetrieveSerializer
 
 
 class OfferDetailRetrieveView(RetrieveAPIView):

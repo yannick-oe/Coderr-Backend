@@ -20,6 +20,25 @@ Add new entries at the top, newest first, using this template:
 
 ---
 
+### 2026-07-26 — Detail updates match on offer_type, id is ignored
+
+- **Context:** offers_app offer update (`PATCH /api/offers/{id}/`),
+  `OfferDetailUpdateSerializer` and `apply_detail_updates`.
+- **Deviation:** The frontend sends each detail in the PATCH body with
+  both `id` and `offer_type` (it replaced the `{id, url}` stubs with full
+  detail objects). The documentation names `offer_type` as the key that
+  identifies a detail for update and never mentions matching by `id`. We
+  match strictly on `offer_type` and deliberately ignore any `id` present
+  in a detail entry (`id` is not a field on the update serializer).
+- **Reason:** `offer_type` is unique per offer (a database constraint)
+  and is the documented identifier. Trusting a client-supplied `id` would
+  risk pointing an update at a detail belonging to another offer; matching
+  by `offer_type` updates the right rows in place and keeps their ids
+  stable, as the documentation requires.
+- **Rollback:** Add an `id` field to `OfferDetailUpdateSerializer` and
+  match on it instead, validating that the id belongs to the target
+  offer. The documentation does not require this.
+
 ### 2026-07-26 — Offer list `min_price` filter is a lower bound
 
 - **Context:** offers_app offer list (`GET /api/offers/`),

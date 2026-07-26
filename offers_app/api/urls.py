@@ -5,14 +5,14 @@ from django.urls import path
 from offers_app.api.views import (
     OfferDetailRetrieveView,
     OfferListCreateView,
-    OfferRetrieveDestroyView,
+    OfferRetrieveUpdateDestroyView,
 )
 
 urlpatterns = [
     path("offers/", OfferListCreateView.as_view(), name="offer-list-create"),
     path(
         "offers/<int:pk>/",
-        OfferRetrieveDestroyView.as_view(),
+        OfferRetrieveUpdateDestroyView.as_view(),
         name="offer-detail",
     ),
     path(

@@ -140,3 +140,78 @@ class OfferListSerializer(OfferRetrieveSerializer):
         """Detail-read fields followed by user_details."""
 
         fields = OfferRetrieveSerializer.Meta.fields + ["user_details"]
+
+
+def apply_detail_updates(offer, entries):
+    """Update each named detail in place, matched by offer_type."""
+    existing = {detail.offer_type: detail for detail in offer.details.all()}
+    for entry in entries:
+        detail = existing.get(entry.pop("offer_type"))
+        if detail is None:
+            raise serializers.ValidationError("Unmatchable offer detail.")
+        for field, value in entry.items():
+            setattr(detail, field, value)
+        detail.save()
+
+
+class OfferDetailUpdateSerializer(serializers.ModelSerializer):
+    """A detail entry for a partial update, matched by offer_type."""
+
+    price = price_field(required=False)
+    features = serializers.JSONField(required=False)
+
+    class Meta:
+        """Editable detail fields plus the identifying offer_type."""
+
+        model = OfferDetail
+        fields = [
+            "title",
+            "revisions",
+            "delivery_time_in_days",
+            "price",
+            "features",
+            "offer_type",
+        ]
+        extra_kwargs = {
+            "title": {"required": False},
+            "revisions": {"required": False},
+            "delivery_time_in_days": {"required": False},
+        }
+
+
+class OfferUpdateSerializer(serializers.ModelSerializer):
+    """Partial offer update; details are matched by offer_type."""
+
+    details = OfferDetailUpdateSerializer(many=True, required=False)
+
+    class Meta:
+        """Editable offer fields plus the optional details array."""
+
+        model = Offer
+        fields = ["title", "description", "image", "details"]
+
+    def validate_details(self, value):
+        """Require a unique offer_type on every detail entry."""
+        types = [entry.get("offer_type") for entry in value]
+        if None in types:
+            raise serializers.ValidationError(
+                "Each detail entry must include its offer_type."
+            )
+        if len(types) != len(set(types)):
+            raise serializers.ValidationError(
+                "Each offer_type may appear at most once."
+            )
+        return value
+
+    def update(self, instance, validated_data):
+        """Update offer fields and matched details atomically."""
+        details = validated_data.pop("details", None)
+        with transaction.atomic():
+            instance = super().update(instance, validated_data)
+            if details is not None:
+                apply_detail_updates(instance, details)
+        return instance
+
+    def to_representation(self, instance):
+        """Render the create-style response with all details."""
+        return OfferCreateSerializer(instance, context=self.context).data
