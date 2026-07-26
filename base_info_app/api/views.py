@@ -29,6 +29,7 @@ def collect_base_info():
 class BaseInfoView(APIView):
     """Public aggregate statistics for the landing page."""
 
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def get(self, request):

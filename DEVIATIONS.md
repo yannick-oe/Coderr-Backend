@@ -20,6 +20,36 @@ Add new entries at the top, newest first, using this template:
 
 ---
 
+### 2026-07-26 — Public auth/base-info views skip token authentication
+
+- **Context:** auth_app (`POST /api/registration/`, `POST /api/login/`)
+  and base_info_app (`GET /api/base-info/`). These three views now set
+  `authentication_classes = []`; the offer list
+  (`OfferListCreateView`, `GET /api/offers/`) deliberately does **not**.
+- **Deviation:** DRF's `TokenAuthentication` raises
+  `AuthenticationFailed` (401) for an unknown or malformed
+  `Authorization` header **before** permissions run, so
+  `permission_classes = [AllowAny]` alone cannot keep a public endpoint
+  reachable. A client holding a stale token then cannot even call
+  `POST /api/login/` to obtain a fresh one — the request dies at the
+  authentication layer before the serializer sees the body. Emptying
+  `authentication_classes` on the three public views makes any
+  `Authorization` header ignored rather than validated. None of the
+  three reads `request.user`, so nothing else changes. The endpoint
+  documentation lists no 401 for these three, so the previous behaviour
+  already sat outside the documented status set.
+- **Reason:** `GET /api/offers/` is public too and also documents no
+  401, but `OfferListCreateView` serves both `GET` (public list) and
+  `POST` (business-only create) on the same path. Clearing its
+  `authentication_classes` would strip the token off offer *creation*
+  and leave it unauthenticated. Its `get_permissions` still requires a
+  valid token for `POST`, and that requires authentication to run — so
+  the offer list keeps authentication and is intentionally excluded from
+  this change.
+- **Rollback:** Remove the `authentication_classes = []` line from
+  `RegistrationView`, `LoginView` and `BaseInfoView` to restore the
+  project-wide `DEFAULT_AUTHENTICATION_CLASSES`.
+
 ### 2026-07-26 — base-info average_rating is 0 when there are no reviews
 
 - **Context:** base_info_app (`GET /api/base-info/`),

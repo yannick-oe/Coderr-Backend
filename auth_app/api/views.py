@@ -32,6 +32,7 @@ def auth_response(user, token):
 class RegistrationView(APIView):
     """Register a new user and return an auth token."""
 
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -46,6 +47,7 @@ class RegistrationView(APIView):
 class LoginView(APIView):
     """Authenticate a user and return a reused or new auth token."""
 
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
