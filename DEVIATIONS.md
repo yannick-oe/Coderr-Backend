@@ -20,6 +20,25 @@ Add new entries at the top, newest first, using this template:
 
 ---
 
+### 2026-07-26 — Order status change limited to the assigned business user
+
+- **Context:** orders_app order update (`PATCH /api/orders/{id}/`),
+  `OrderStatusUpdateDeleteView` / `IsAssignedBusinessUser`.
+- **Deviation:** The documentation says the status may be changed by "a
+  user of type business" (`Nur ein Benutzer vom typ 'business'`). Read
+  literally, that would let ANY business account change the status of an
+  order belonging to a competitor. We restrict the change to the
+  `business_user` actually assigned to the order (`obj.business_user_id
+  == request.user.id`), which is by construction a business account.
+- **Reason:** Least privilege. A business user has no legitimate reason
+  to alter another business's orders; scoping the permission to the
+  assigned business user prevents cross-tenant tampering while still
+  satisfying the "must be a business user" intent.
+- **Rollback:** Relax `IsAssignedBusinessUser` to a profile-type check
+  alone — allow any authenticated user whose profile `type` is
+  `business` (mirroring `offers_app.IsBusinessUser`) regardless of
+  whether they are the assigned business user.
+
 ### 2026-07-26 — Detail updates match on offer_type, id is ignored
 
 - **Context:** offers_app offer update (`PATCH /api/offers/{id}/`),
