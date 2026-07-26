@@ -33,7 +33,7 @@ class Offer(models.Model):
 
         verbose_name = "Offer"
         verbose_name_plural = "Offers"
-        ordering = ["-created_at"]
+        ordering = ["-created_at", "-id"]
 
     def __str__(self) -> str:
         """Return the offer title for admin displays."""
