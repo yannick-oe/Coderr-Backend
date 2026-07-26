@@ -20,6 +20,66 @@ Add new entries at the top, newest first, using this template:
 
 ---
 
+### 2026-07-26 — Review list ordering accepts descending variants
+
+- **Context:** reviews_app review list (`GET /api/reviews/`),
+  `ReviewListCreateView.ordering_fields`.
+- **Deviation:** The documentation names only `updated_at` and `rating`
+  for the `ordering` parameter, but the delivered sort dropdowns emit
+  four values: `updated_at`, `-updated_at`, `rating` and `-rating`
+  (`customer_profile.html:63-66`, `offer.html:68-71`), with a default of
+  `-updated_at`. We accept all four; the `-` prefix is DRF's descending
+  notation on those same two fields, not an additional field. This
+  mirrors the decision already recorded for the offer list.
+- **Reason:** Allowing only the two unprefixed values would make two of
+  the four frontend sort options silently do nothing.
+- **Rollback:** Restrict to the two unprefixed values via explicit
+  validation instead of DRF's `OrderingFilter`.
+
+### 2026-07-26 — Review rating is constrained to 1–5
+
+- **Context:** reviews_app review create/update, `ReviewSerializer.rating`.
+- **Deviation:** The documentation does not state a numeric range for
+  `rating`. We constrain it to an integer from 1 to 5
+  (`min_value=1, max_value=5`), rejecting anything else with 400.
+- **Reason:** The delivered rating dialog is a five-star picker
+  (`offer.html:114-120`, `countStars` in `review_crud.js:89-101`) and
+  cannot produce a value outside 1–5, so a stricter serializer rule
+  matches the only inputs the frontend can send and blocks bad API data.
+- **Rollback:** Remove `min_value`/`max_value` from `ReviewSerializer`
+  `rating` to accept any integer.
+
+### 2026-07-26 — Non-customer review creation returns 403, not 401
+
+- **Context:** reviews_app review create (`POST /api/reviews/`),
+  `IsReviewCustomer`.
+- **Deviation:** The documentation lists 401 with the description "the
+  user must be authenticated and have a customer profile", which would
+  return 401 to a logged-in business user. We return 403 for an
+  authenticated non-customer instead.
+- **Reason:** This project's hard rule is that 401 means "not logged in"
+  and 403 means "logged in but not permitted"; a logged-in business user
+  is authenticated. Offers and orders already return 403 for the
+  identical "wrong profile type" situation, so 403 keeps the API
+  consistent.
+- **Rollback:** Have the customer-profile permission raise
+  `NotAuthenticated` (401) instead of denying with 403.
+
+### 2026-07-26 — Duplicate review returns 403, not 400
+
+- **Context:** reviews_app review create (`POST /api/reviews/`),
+  `HasNoExistingReview` (plus the DB `UniqueConstraint`).
+- **Deviation:** The documentation lists the duplicate case under BOTH
+  400 ("the user has possibly already reviewed this business profile")
+  and 403 ("a user may only submit one review per business profile"). We
+  treat a duplicate as 403.
+- **Reason:** The 403 line states the rule definitively while the 400
+  line is hedged ("möglicherweise"), and using 403 keeps 400 reserved
+  for genuinely malformed data. The check is a named permission class;
+  the database `UniqueConstraint` is the real backstop.
+- **Rollback:** Enforce uniqueness with a serializer validator so a
+  duplicate surfaces as 400 instead of 403.
+
 ### 2026-07-26 — Order status change limited to the assigned business user
 
 - **Context:** orders_app order update (`PATCH /api/orders/{id}/`),
