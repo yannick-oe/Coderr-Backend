@@ -1,8 +1,11 @@
 """Shared helpers for the offers_app tests."""
 
 from copy import deepcopy
+from io import BytesIO
 
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image
 from rest_framework.authtoken.models import Token
 
 from auth_app.models import UserProfile
@@ -53,6 +56,14 @@ def authenticate(client, user):
     """Attach the user's token credentials to the API client."""
     token, _ = Token.objects.get_or_create(user=user)
     client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+
+def make_image(name="offer.png"):
+    """Return a small valid in-memory PNG upload."""
+    buffer = BytesIO()
+    Image.new("RGB", (1, 1)).save(buffer, format="PNG")
+    buffer.seek(0)
+    return SimpleUploadedFile(name, buffer.read(), "image/png")
 
 
 def offer_payload(**overrides):
