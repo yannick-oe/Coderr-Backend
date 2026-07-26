@@ -20,6 +20,21 @@ Add new entries at the top, newest first, using this template:
 
 ---
 
+### 2026-07-26 — base-info average_rating is 0 when there are no reviews
+
+- **Context:** base_info_app (`GET /api/base-info/`),
+  `collect_base_info`.
+- **Deviation:** The documentation is silent on the empty case. When
+  there are no reviews at all, the database `Avg("rating")` aggregate
+  returns `NULL`; we coerce it to `0` (`round(avg or 0, 1)`) so
+  `average_rating` is always a number, never `null`.
+- **Reason:** The delivered frontend writes every base-info value
+  straight into the DOM (`index.js:35-43`), so a `null` would render the
+  literal word "null" on the landing page. `0` is the sensible empty
+  value for a mean of zero ratings.
+- **Rollback:** Return `reviews["average"]` unchanged (allowing `None`)
+  if a `null` average is ever preferred.
+
 ### 2026-07-26 — Review list ordering accepts descending variants
 
 - **Context:** reviews_app review list (`GET /api/reviews/`),
