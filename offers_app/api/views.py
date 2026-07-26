@@ -1,28 +1,68 @@
 """API views for the offers_app app."""
 
 from django.db.models import Min
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import (
-    CreateAPIView,
+    ListCreateAPIView,
     RetrieveAPIView,
     RetrieveDestroyAPIView,
 )
-from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
+from rest_framework.permissions import (
+    SAFE_METHODS,
+    AllowAny,
+    IsAuthenticated,
+)
 
+from offers_app.api.filters import OfferFilter
+from offers_app.api.pagination import OfferPagination
 from offers_app.api.permissions import IsBusinessUser, IsOfferOwnerOrReadOnly
 from offers_app.api.serializers import (
     OfferCreateSerializer,
     OfferDetailSerializer,
+    OfferListSerializer,
     OfferRetrieveSerializer,
 )
 from offers_app.models import Offer, OfferDetail
 
 
-class OfferCreateView(CreateAPIView):
-    """Create a new offer with its three pricing tiers."""
+def annotated_offers():
+    """Return offers with detail minimums, user and details loaded."""
+    return (
+        Offer.objects.select_related("user")
+        .prefetch_related("details")
+        .annotate(
+            min_price=Min("details__price"),
+            min_delivery_time=Min("details__delivery_time_in_days"),
+        )
+    )
 
-    queryset = Offer.objects.all()
-    serializer_class = OfferCreateSerializer
-    permission_classes = [IsAuthenticated, IsBusinessUser]
+
+class OfferListCreateView(ListCreateAPIView):
+    """List offers publicly or create one as a business user."""
+
+    pagination_class = OfferPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = OfferFilter
+    search_fields = ["title", "description"]
+    ordering_fields = ["updated_at", "min_price"]
+    ordering = ["-created_at", "-id"]
+
+    def get_queryset(self):
+        """Annotate minimums before filtering and ordering."""
+        return annotated_offers()
+
+    def get_serializer_class(self):
+        """List with the list serializer, create with the create one."""
+        if self.request.method == "POST":
+            return OfferCreateSerializer
+        return OfferListSerializer
+
+    def get_permissions(self):
+        """Public list; business-only create."""
+        if self.request.method == "POST":
+            return [IsAuthenticated(), IsBusinessUser()]
+        return [AllowAny()]
 
 
 class OfferRetrieveDestroyView(RetrieveDestroyAPIView):
@@ -33,13 +73,9 @@ class OfferRetrieveDestroyView(RetrieveDestroyAPIView):
 
     def get_queryset(self):
         """Annotate and prefetch for reads; stay lean for deletes."""
-        offers = Offer.objects.select_related("user")
         if self.request.method not in SAFE_METHODS:
-            return offers
-        return offers.prefetch_related("details").annotate(
-            min_price=Min("details__price"),
-            min_delivery_time=Min("details__delivery_time_in_days"),
-        )
+            return Offer.objects.select_related("user")
+        return annotated_offers()
 
 
 class OfferDetailRetrieveView(RetrieveAPIView):

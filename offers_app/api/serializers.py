@@ -1,5 +1,6 @@
 """Serializers for the offers_app API."""
 
+from django.contrib.auth.models import User
 from django.db import transaction
 from django.urls import reverse
 from rest_framework import serializers
@@ -118,3 +119,24 @@ class OfferRetrieveSerializer(serializers.ModelSerializer):
             "min_price",
             "min_delivery_time",
         ]
+
+
+class OfferUserDetailsSerializer(serializers.ModelSerializer):
+    """The offer creator's public name fields."""
+
+    class Meta:
+        """User fields nested under user_details, in order."""
+
+        model = User
+        fields = ["first_name", "last_name", "username"]
+
+
+class OfferListSerializer(OfferRetrieveSerializer):
+    """List item: the detail shape plus nested user_details."""
+
+    user_details = OfferUserDetailsSerializer(source="user", read_only=True)
+
+    class Meta(OfferRetrieveSerializer.Meta):
+        """Detail-read fields followed by user_details."""
+
+        fields = OfferRetrieveSerializer.Meta.fields + ["user_details"]

@@ -20,6 +20,41 @@ Add new entries at the top, newest first, using this template:
 
 ---
 
+### 2026-07-26 — Offer list `min_price` filter is a lower bound
+
+- **Context:** offers_app offer list (`GET /api/offers/`),
+  `OfferFilter.min_price`.
+- **Deviation:** The documentation describes the `min_price` query
+  parameter only as "filtert Angebote mit einem Mindestpreis" (filters
+  offers with a minimum price), which is ambiguous about the comparison
+  direction. We read it as a **lower bound**: the filter keeps offers
+  whose annotated `min_price` is greater than or equal to the value
+  (`lookup_expr="gte"`). This mirrors `max_delivery_time`, which the
+  documentation defines as an upper bound (`lte`).
+- **Reason:** A "minimum price" filter paired with a "maximum delivery
+  time" filter reads naturally as a price floor and a time ceiling, and
+  gives the frontend a usable price range together with the two.
+- **Rollback:** Change `lookup_expr` on `OfferFilter.min_price` from
+  `"gte"` to `"lte"` to treat the value as an upper bound instead.
+
+### 2026-07-26 — Offer list ordering accepts descending variants
+
+- **Context:** offers_app offer list (`GET /api/offers/`),
+  `OfferListCreateView.ordering_fields`.
+- **Deviation:** The documentation names only the field names
+  `updated_at` and `min_price` for the `ordering` parameter, but the
+  delivered frontend's sort dropdown emits four values: `updated_at`,
+  `-updated_at`, `min_price` and `-min_price`. We accept all four. The
+  `-` prefix is DRF's standard descending notation on those same two
+  fields, not an additional field.
+- **Reason:** Allowing only the two unprefixed values would make two of
+  the four frontend sort options silently do nothing, with no error
+  anywhere. `ordering_fields = ["updated_at", "min_price"]` enables both
+  directions for each field via DRF's `OrderingFilter`.
+- **Rollback:** To reject descending variants, replace `OrderingFilter`
+  with an explicit `ChoiceField`/validation limited to the two unprefixed
+  values; note this breaks two of the frontend's sort options.
+
 ### 2026-07-25 — Offer detail URLs are absolute and include /api/
 
 - **Context:** offers_app offer-detail endpoint
