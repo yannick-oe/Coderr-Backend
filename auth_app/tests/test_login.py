@@ -8,6 +8,13 @@ from rest_framework.test import APITestCase
 LOGIN_URL = "/api/login/"
 RESPONSE_KEYS = {"token", "username", "email", "user_id"}
 ORDERED_KEYS = ["token", "username", "email", "user_id"]
+UNKNOWN_TOKEN = "Token " + "a" * 40
+MALFORMED_HEADER = "Token malformed value"
+AUTH_HEADER_CASES = [
+    ("none", None),
+    ("unknown_token", UNKNOWN_TOKEN),
+    ("malformed", MALFORMED_HEADER),
+]
 
 
 class LoginTests(APITestCase):
@@ -53,3 +60,27 @@ class LoginTests(APITestCase):
         """An unknown username returns 400."""
         response = self.login("ghost", "asdasd")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class LoginIgnoresAuthHeaderTests(APITestCase):
+    """Login succeeds regardless of any Authorization header."""
+
+    def setUp(self):
+        """Create a user with known credentials."""
+        User.objects.create_user(username="andrey", password="asdasd")
+
+    def login(self, header):
+        """Post valid credentials under the given auth header."""
+        if header is None:
+            self.client.credentials()
+        else:
+            self.client.credentials(HTTP_AUTHORIZATION=header)
+        body = {"username": "andrey", "password": "asdasd"}
+        return self.client.post(LOGIN_URL, body, format="json")
+
+    def test_returns_200_for_every_header_variant(self):
+        """Valid credentials return 200 with no, unknown, or bad header."""
+        for label, header in AUTH_HEADER_CASES:
+            with self.subTest(header=label):
+                response = self.login(header)
+                self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -12,6 +12,13 @@ from auth_app.models import ProfileType
 REGISTRATION_URL = "/api/registration/"
 RESPONSE_KEYS = {"token", "username", "email", "user_id"}
 ORDERED_KEYS = ["token", "username", "email", "user_id"]
+UNKNOWN_TOKEN = "Token " + "a" * 40
+MALFORMED_HEADER = "Token malformed value"
+AUTH_HEADER_CASES = [
+    ("none", None),
+    ("unknown_token", UNKNOWN_TOKEN),
+    ("malformed", MALFORMED_HEADER),
+]
 
 
 def payload(**overrides):
@@ -112,3 +119,23 @@ class RegistrationValidationTests(APITestCase):
             with self.assertRaises(RuntimeError):
                 self.client.post(REGISTRATION_URL, payload(), format="json")
         self.assertFalse(User.objects.filter(username="newuser").exists())
+
+
+class RegistrationIgnoresAuthHeaderTests(APITestCase):
+    """Registration succeeds regardless of any Authorization header."""
+
+    def register(self, header, username):
+        """Post a valid registration under the given auth header."""
+        if header is None:
+            self.client.credentials()
+        else:
+            self.client.credentials(HTTP_AUTHORIZATION=header)
+        data = payload(username=username, email=f"{username}@example.com")
+        return self.client.post(REGISTRATION_URL, data, format="json")
+
+    def test_returns_201_for_every_header_variant(self):
+        """A valid body returns 201 with no, unknown, or bad header."""
+        for label, header in AUTH_HEADER_CASES:
+            with self.subTest(header=label):
+                response = self.register(header, f"user_{label}")
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)

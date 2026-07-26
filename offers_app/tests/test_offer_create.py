@@ -73,6 +73,12 @@ class OfferCreateTests(APITestCase):
         response = self.post(offer_payload())
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_unknown_token_create_returns_401(self):
+        """An unknown token still returns 401; the view is not weakened."""
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + "a" * 40)
+        response = self.post(offer_payload())
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_two_details_rejected(self):
         """An offer with only two details is rejected."""
         authenticate(self.client, self.business)

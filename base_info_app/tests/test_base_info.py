@@ -16,6 +16,13 @@ BASE_INFO_KEYS = [
     "business_profile_count",
     "offer_count",
 ]
+UNKNOWN_TOKEN = "Token " + "a" * 40
+MALFORMED_HEADER = "Token malformed value"
+AUTH_HEADER_CASES = [
+    ("none", None),
+    ("unknown_token", UNKNOWN_TOKEN),
+    ("malformed", MALFORMED_HEADER),
+]
 
 
 def make_profile(username, profile_type):
@@ -101,3 +108,22 @@ class BaseInfoEmptyTests(APITestCase):
         self.assertEqual(data["review_count"], 0)
         self.assertEqual(data["average_rating"], 0)
         self.assertIsNotNone(data["average_rating"])
+
+
+class BaseInfoIgnoresAuthHeaderTests(APITestCase):
+    """base-info returns 200 regardless of any Authorization header."""
+
+    def fetch(self, header):
+        """GET base-info under the given auth header."""
+        if header is None:
+            self.client.credentials()
+        else:
+            self.client.credentials(HTTP_AUTHORIZATION=header)
+        return self.client.get(BASE_INFO_URL)
+
+    def test_returns_200_for_every_header_variant(self):
+        """base-info returns 200 with no, unknown, or bad header."""
+        for label, header in AUTH_HEADER_CASES:
+            with self.subTest(header=label):
+                response = self.fetch(header)
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
