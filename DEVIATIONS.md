@@ -1,7 +1,6 @@
 # Deviations
 
-A dated log of deliberate deviations from the binding standards in
-`CLAUDE.md` and the reference documents in `docs/`. Every deviation is
+Every deviation is
 recorded here with its reason and a rollback idea, so that no rule is
 ever worked around silently.
 
@@ -20,7 +19,7 @@ Add new entries at the top, newest first, using this template:
 
 ---
 
-### 2026-07-26 — Public auth/base-info views skip token authentication
+### 2026-07-27 — Public auth/base-info views skip token authentication
 
 - **Context:** auth_app (`POST /api/registration/`, `POST /api/login/`)
   and base_info_app (`GET /api/base-info/`). These three views now set
@@ -50,7 +49,7 @@ Add new entries at the top, newest first, using this template:
   `RegistrationView`, `LoginView` and `BaseInfoView` to restore the
   project-wide `DEFAULT_AUTHENTICATION_CLASSES`.
 
-### 2026-07-26 — base-info average_rating is 0 when there are no reviews
+### 2026-07-27 — base-info average_rating is 0 when there are no reviews
 
 - **Context:** base_info_app (`GET /api/base-info/`),
   `collect_base_info`.
@@ -65,7 +64,7 @@ Add new entries at the top, newest first, using this template:
 - **Rollback:** Return `reviews["average"]` unchanged (allowing `None`)
   if a `null` average is ever preferred.
 
-### 2026-07-26 — Review list ordering accepts descending variants
+### 2026-07-27 — Review list ordering accepts descending variants
 
 - **Context:** reviews_app review list (`GET /api/reviews/`),
   `ReviewListCreateView.ordering_fields`.
@@ -81,7 +80,7 @@ Add new entries at the top, newest first, using this template:
 - **Rollback:** Restrict to the two unprefixed values via explicit
   validation instead of DRF's `OrderingFilter`.
 
-### 2026-07-26 — Review rating is constrained to 1–5
+### 2026-07-27 — Review rating is constrained to 1–5
 
 - **Context:** reviews_app review create/update, `ReviewSerializer.rating`.
 - **Deviation:** The documentation does not state a numeric range for
@@ -94,7 +93,7 @@ Add new entries at the top, newest first, using this template:
 - **Rollback:** Remove `min_value`/`max_value` from `ReviewSerializer`
   `rating` to accept any integer.
 
-### 2026-07-26 — Non-customer review creation returns 403, not 401
+### 2026-07-27 — Non-customer review creation returns 403, not 401
 
 - **Context:** reviews_app review create (`POST /api/reviews/`),
   `IsReviewCustomer`.
@@ -110,7 +109,7 @@ Add new entries at the top, newest first, using this template:
 - **Rollback:** Have the customer-profile permission raise
   `NotAuthenticated` (401) instead of denying with 403.
 
-### 2026-07-26 — Duplicate review returns 400, not 403
+### 2026-07-27 — Duplicate review returns 400, not 403
 
 - **Context:** reviews_app review create (`POST /api/reviews/`),
   `ReviewSerializer.validate` (plus the DB `UniqueConstraint`). This
@@ -145,7 +144,7 @@ Add new entries at the top, newest first, using this template:
   `duplicate_exists` from `ReviewSerializer`. Note that this reopens
   the masking bug in reason (2) and reintroduces the PM suite failure.
 
-### 2026-07-26 — Order status change limited to the assigned business user
+### 2026-07-27 — Order status change limited to the assigned business user
 
 - **Context:** orders_app order update (`PATCH /api/orders/{id}/`),
   `OrderStatusUpdateDeleteView` / `IsAssignedBusinessUser`.
@@ -164,7 +163,7 @@ Add new entries at the top, newest first, using this template:
   `business` (mirroring `offers_app.IsBusinessUser`) regardless of
   whether they are the assigned business user.
 
-### 2026-07-26 — Detail updates match on offer_type, id is ignored
+### 2026-07-27 — Detail updates match on offer_type, id is ignored
 
 - **Context:** offers_app offer update (`PATCH /api/offers/{id}/`),
   `OfferDetailUpdateSerializer` and `apply_detail_updates`.
@@ -183,7 +182,7 @@ Add new entries at the top, newest first, using this template:
   match on it instead, validating that the id belongs to the target
   offer. The documentation does not require this.
 
-### 2026-07-26 — Offer list `min_price` filter is a lower bound
+### 2026-07-27 — Offer list `min_price` filter is a lower bound
 
 - **Context:** offers_app offer list (`GET /api/offers/`),
   `OfferFilter.min_price`.
@@ -200,7 +199,7 @@ Add new entries at the top, newest first, using this template:
 - **Rollback:** Change `lookup_expr` on `OfferFilter.min_price` from
   `"gte"` to `"lte"` to treat the value as an upper bound instead.
 
-### 2026-07-26 — Offer list ordering accepts descending variants
+### 2026-07-27 — Offer list ordering accepts descending variants
 
 - **Context:** offers_app offer list (`GET /api/offers/`),
   `OfferListCreateView.ordering_fields`.
@@ -218,7 +217,7 @@ Add new entries at the top, newest first, using this template:
   with an explicit `ChoiceField`/validation limited to the two unprefixed
   values; note this breaks two of the frontend's sort options.
 
-### 2026-07-25 — Offer detail URLs are absolute and include /api/
+### 2026-07-27 — Offer detail URLs are absolute and include /api/
 
 - **Context:** offers_app offer-detail endpoint
   (`GET /api/offers/{id}/`), `OfferDetailLinkSerializer.get_url`.
@@ -241,7 +240,7 @@ Add new entries at the top, newest first, using this template:
   `request.build_absolute_uri`; note this breaks navigation unless the
   frontend is changed to add the `/api` prefix.
 
-### 2026-07-25 — Customer profile list omits business-only fields
+### 2026-07-27 — Customer profile list omits business-only fields
 
 - **Context:** auth_app customer list endpoint
   (`GET /api/profiles/customer/`), `CustomerProfileSerializer`.
@@ -265,7 +264,7 @@ Add new entries at the top, newest first, using this template:
   already exist on the model and are covered by `BLANK_FIELDS`. No model
   or migration change is required.
 
-### 2026-07-25 — Email uniqueness enforced at registration
+### 2026-07-27 — Email uniqueness enforced at registration
 
 - **Context:** auth_app registration endpoint (`POST /api/registration/`),
   `RegistrationSerializer.validate_email`.
