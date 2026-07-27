@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from auth_app.models import ProfileType
+from reviews_app.api.serializers import DUPLICATE_REVIEW_ERROR
+from reviews_app.models import Review
 from reviews_app.tests.utils import REVIEW_KEYS, authenticate, make_user
 
 REVIEWS_URL = "/api/reviews/"
@@ -62,11 +64,34 @@ class ReviewCreateTests(APITestCase):
         response = self.create(self.body())
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_duplicate_returns_403(self):
-        """A second review of the same business returns 403."""
+    def test_duplicate_returns_400(self):
+        """A second review of the same business returns 400."""
         self.create(self.body(), self.customer)
         response = self.create(self.body(), self.customer)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_duplicate_error_uses_default_field_format(self):
+        """The duplicate error is a field-keyed list, not a detail string."""
+        self.create(self.body(), self.customer)
+        response = self.create(self.body(), self.customer)
+        self.assertNotIn("detail", response.data)
+        self.assertEqual(
+            response.data["business_user"], [DUPLICATE_REVIEW_ERROR]
+        )
+
+    def test_duplicate_creates_no_second_review(self):
+        """A rejected duplicate leaves exactly one review behind."""
+        self.create(self.body(), self.customer)
+        self.create(self.body(), self.customer)
+        self.assertEqual(Review.objects.count(), 1)
+
+    def test_duplicate_with_missing_field_returns_400(self):
+        """A duplicate that is also malformed returns 400, not 403."""
+        self.create(self.body(), self.customer)
+        body = self.body()
+        del body["rating"]
+        response = self.create(body, self.customer)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_different_business_same_reviewer_201(self):
         """The same reviewer may review a different business."""
