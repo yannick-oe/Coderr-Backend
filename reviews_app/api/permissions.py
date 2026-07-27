@@ -3,7 +3,6 @@
 from rest_framework.permissions import BasePermission
 
 from auth_app.models import ProfileType, UserProfile
-from reviews_app.models import Review
 
 
 class IsReviewCustomer(BasePermission):
@@ -13,24 +12,6 @@ class IsReviewCustomer(BasePermission):
         """Return True when the user has a customer profile."""
         return UserProfile.objects.filter(
             user=request.user, type=ProfileType.CUSTOMER
-        ).exists()
-
-
-class HasNoExistingReview(BasePermission):
-    """Reject a second review by the same reviewer of one business."""
-
-    def has_permission(self, request, view):
-        """Return True when no review by this reviewer exists yet."""
-        return not self.duplicate_exists(request)
-
-    def duplicate_exists(self, request):
-        """Return True when the reviewer already reviewed the target."""
-        try:
-            business_id = int(request.data.get("business_user"))
-        except (TypeError, ValueError):
-            return False
-        return Review.objects.filter(
-            business_user_id=business_id, reviewer=request.user
         ).exists()
 
 

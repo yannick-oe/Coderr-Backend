@@ -110,20 +110,40 @@ Add new entries at the top, newest first, using this template:
 - **Rollback:** Have the customer-profile permission raise
   `NotAuthenticated` (401) instead of denying with 403.
 
-### 2026-07-26 — Duplicate review returns 403, not 400
+### 2026-07-26 — Duplicate review returns 400, not 403
 
 - **Context:** reviews_app review create (`POST /api/reviews/`),
-  `HasNoExistingReview` (plus the DB `UniqueConstraint`).
+  `ReviewSerializer.validate` (plus the DB `UniqueConstraint`). This
+  entry replaces an earlier one from the same day that chose 403; that
+  decision's own recorded rollback — "enforce uniqueness with a
+  serializer validator" — is what has now been executed.
 - **Deviation:** The documentation lists the duplicate case under BOTH
   400 ("the user has possibly already reviewed this business profile")
-  and 403 ("a user may only submit one review per business profile"). We
-  treat a duplicate as 403.
-- **Reason:** The 403 line states the rule definitively while the 400
-  line is hedged ("möglicherweise"), and using 403 keeps 400 reserved
-  for genuinely malformed data. The check is a named permission class;
-  the database `UniqueConstraint` is the real backstop.
-- **Rollback:** Enforce uniqueness with a serializer validator so a
-  duplicate surfaces as 400 instead of 403.
+  and 403 ("a user may only submit one review per business profile").
+  Either code is defensible; we now treat a duplicate as 400 and raise
+  it from the serializer instead of denying it in a permission class.
+- **Reason:** Two reasons, the first decisive. (1) The DA PM test suite
+  runs 281 tests against this backend and reported exactly one failure:
+  it expects 400 for a duplicate and we returned 403. Since the
+  documentation sanctions both codes, the graded suite settles the tie.
+  (2) Permission classes run before serializer validation, so while the
+  duplicate check was a permission it masked every other error: a
+  request that was both malformed and a duplicate returned 403 instead
+  of the documented 400 (measured against the previous commit — a
+  duplicate with `rating` missing returned 403 `permission_denied`; it
+  now returns 400 `{"rating": ["This field is required."]}`). Moving
+  the check into `validate()` restores the documented precedence, since
+  field validation now runs first.
+- **Note:** `IsReviewCustomer` is unaffected and still returns 403 for a
+  business user; only the duplicate check moved. The database
+  `UniqueConstraint` is untouched and remains the real guarantee — the
+  serializer check is what turns a duplicate into a clean 400 instead
+  of an `IntegrityError`.
+- **Rollback:** Reinstate a `HasNoExistingReview` permission class in
+  `reviews_app/api/permissions.py`, add it to the `POST` branch of
+  `ReviewListCreateView.get_permissions`, and delete `validate` and
+  `duplicate_exists` from `ReviewSerializer`. Note that this reopens
+  the masking bug in reason (2) and reintroduces the PM suite failure.
 
 ### 2026-07-26 — Order status change limited to the assigned business user
 

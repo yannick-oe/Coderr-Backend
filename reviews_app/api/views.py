@@ -7,11 +7,7 @@ from rest_framework.mixins import DestroyModelMixin, UpdateModelMixin
 from rest_framework.permissions import IsAuthenticated
 
 from reviews_app.api.filters import ReviewFilter
-from reviews_app.api.permissions import (
-    HasNoExistingReview,
-    IsReviewAuthor,
-    IsReviewCustomer,
-)
+from reviews_app.api.permissions import IsReviewAuthor, IsReviewCustomer
 from reviews_app.api.serializers import (
     ReviewSerializer,
     ReviewUpdateSerializer,
@@ -34,13 +30,9 @@ class ReviewListCreateView(ListCreateAPIView):
         return Review.objects.select_related("business_user", "reviewer")
 
     def get_permissions(self):
-        """Any authenticated user lists; only new customers create."""
+        """Any authenticated user lists; only customers create."""
         if self.request.method == "POST":
-            return [
-                IsAuthenticated(),
-                IsReviewCustomer(),
-                HasNoExistingReview(),
-            ]
+            return [IsAuthenticated(), IsReviewCustomer()]
         return [IsAuthenticated()]
 
 

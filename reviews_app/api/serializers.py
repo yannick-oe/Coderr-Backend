@@ -8,6 +8,7 @@ from reviews_app.models import Review
 
 RATING_MIN = 1
 RATING_MAX = 5
+DUPLICATE_REVIEW_ERROR = "You have already reviewed this business user."
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -45,6 +46,23 @@ class ReviewSerializer(serializers.ModelSerializer):
                 "business_user must be a business account."
             )
         return value
+
+    def validate(self, attrs):
+        """Reject a second review of one business by one reviewer."""
+        if self.instance is not None:
+            return attrs
+        if self.duplicate_exists(attrs["business_user"]):
+            raise serializers.ValidationError(
+                {"business_user": [DUPLICATE_REVIEW_ERROR]}
+            )
+        return attrs
+
+    def duplicate_exists(self, business_user):
+        """Return True when the requester already reviewed the target."""
+        return Review.objects.filter(
+            business_user=business_user,
+            reviewer=self.context["request"].user,
+        ).exists()
 
     def create(self, validated_data):
         """Attach the authenticated user as the reviewer."""
